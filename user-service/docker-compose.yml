@@ -1,0 +1,30 @@
+version: "3.9"
+
+# Define a Docker service for PostgreSQL.
+services:
+  postgres:
+    # Use the latest PostgreSQL image available.
+    image: postgres:latest
+
+    # Ensure that the PostgreSQL container restarts automatically if it stops.
+    restart: always
+
+    # Set environment variables for PostgreSQL configuration.
+    environment:
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=root
+      - POSTGRES_DB=user_service
+
+    # Map container port 5432 to host port 5432 to allow external connections.
+    ports:
+      - "5432:5432"
+
+    # Mount a volume to persist PostgreSQL data.
+    volumes:
+      - db:/var/lib/postgresql/data
+
+# Define a volume for persisting PostgreSQL data.
+volumes:
+  db:
+    # Use the local driver for the volume.
+    driver: local

@@ -1,0 +1,102 @@
+# Define the service configuration for the user-service.
+service: user-service
+
+# Specify the framework version used for deployment.
+frameworkVersion: "3"
+
+# Define the provider configuration for AWS.
+provider:
+  name: aws
+  runtime: nodejs14.x
+  versionFunctions: false
+  stage: "dev"
+  region: eu-central-1
+  httpApi:
+    cors: true
+
+# Define individual serverless functions.
+functions:
+  # Define the signup function.
+  signup:
+    timeout: 100
+    handler: app/handler.Signup
+    events:
+      - httpApi:
+          path: /signup
+          method: post
+
+  # Define the login function.
+  login:
+    timeout: 100
+    handler: app/handler.Login
+    events:
+      - httpApi:
+          path: /login
+          method: post
+
+  # Define the verify function.
+  verify:
+    timeout: 100
+    handler: app/handler.Verify
+    events:
+      - httpApi:
+          path: /verify
+          method: get
+      - httpApi:
+          path: /verify
+          method: post
+
+  # Define the profile function.
+  profile:
+    timeout: 100
+    handler: app/handler.Profile
+    events:
+      - httpApi:
+          path: /user
+          method: post
+      - httpApi:
+          path: /user
+          method: put
+      - httpApi:
+          path: /user
+          method: get
+
+  # Define the cart function.
+  cart:
+    timeout: 100
+    handler: app/handler.Cart
+    events:
+      - httpApi:
+          path: /cart
+          method: post
+      - httpApi:
+          path: /cart
+          method: put
+      - httpApi:
+          path: /cart
+          method: get
+
+  # Define the payment function.
+  payment:
+    timeout: 100
+    handler: app/handler.Payment
+    events:
+      - httpApi:
+          path: /payment
+          method: post
+      - httpApi:
+          path: /payment
+          method: put
+      - httpApi:
+          path: /payment
+          method: get
+
+# Define plugins used in the serverless configuration.
+plugins:
+  - serverless-offline
+  - serverless-plugin-typescript
+  - serverless-dotenv-plugin
+  
+# Package configuration to deploy functions individually.
+package:
+  individually: true
