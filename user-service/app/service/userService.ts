@@ -65,7 +65,6 @@ export class UserService {
       if (error) return ErrorResponse(404, error);
 
       const data = await this.repository.findAccount(input.email);
-      console.log(data);
 
       const verified = await ValidatePassword(
         input.password,
@@ -73,9 +72,7 @@ export class UserService {
         data.salt
       );
 
-      if (!verified) {
-        throw new Error("Password does not match");
-      }
+      if (!verified) throw new Error("Invalid Credential");
 
       const token = GetToken(data);
 
