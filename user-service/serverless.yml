@@ -4,99 +4,161 @@ service: user-service
 # Specify the framework version used for deployment.
 frameworkVersion: "3"
 
+useDotenv: true
+
 # Define the provider configuration for AWS.
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs16.x
   versionFunctions: false
   stage: "dev"
-  region: eu-central-1
+  region: us-east-2
   httpApi:
     cors: true
+  # Define environment variables
+  environment:
+    SNS_TOPIC: { Ref: CustomerTopic } # Reference to SNS topic
+  # Define IAM role permissions
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sns:Publish" # Allow publishing to SNS topic
+      Resource:
+        - !Ref CustomerTopic # Reference to SNS topic
 
-# Define individual serverless functions.
+custom:
+  stage: "dev"
+  serverless-offline:
+    httpPort: 4000
+    lambdaPort: 4002
+
 functions:
-  # Define the signup function.
+  # SignUp function configuration
   signup:
-    timeout: 100
-    handler: app/handler.Signup
+    handler: app/handler.SignUp # Handler for SignUp function
     events:
       - httpApi:
-          path: /signup
-          method: post
+          path: /signup # Endpoint path
+          method: post # HTTP method
 
-  # Define the login function.
+  # Login function configuration
   login:
-    timeout: 100
-    handler: app/handler.Login
+    handler: app/handler.Login # Handler for Login function
     events:
       - httpApi:
-          path: /login
-          method: post
+          path: /login # Endpoint path
+          method: post # HTTP method
 
-  # Define the verify function.
+  # Verify function configuration
   verify:
-    timeout: 100
-    handler: app/handler.Verify
+    handler: app/handler.Verify # Handler for Verify function
     events:
       - httpApi:
-          path: /verify
-          method: get
-      - httpApi:
-          path: /verify
-          method: post
+          path: /verify # Endpoint path
+          method: post # HTTP method
 
-  # Define the profile function.
-  profile:
-    timeout: 100
-    handler: app/handler.Profile
+  # GetVerificationCode function configuration
+  get-verification-code:
+    handler: app/handler.GetVerificationCode # Handler for GetVerificationCode function
     events:
       - httpApi:
-          path: /user
-          method: post
-      - httpApi:
-          path: /user
-          method: put
-      - httpApi:
-          path: /user
-          method: get
+          path: /verify # Endpoint path
+          method: get # HTTP method
 
-  # Define the cart function.
-  cart:
-    timeout: 100
-    handler: app/handler.Cart
+  # CreateProfile function configuration
+  create-profile:
+    handler: app/handler.CreateProfile # Handler for CreateProfile function
     events:
       - httpApi:
-          path: /cart
-          method: post
-      - httpApi:
-          path: /cart
-          method: put
-      - httpApi:
-          path: /cart
-          method: get
+          path: /user # Endpoint path
+          method: post # HTTP method
 
-  # Define the payment function.
-  payment:
-    timeout: 100
-    handler: app/handler.Payment
+  # EditProfile function configuration
+  edit-profile:
+    handler: app/handler.EditProfile # Handler for EditProfile function
     events:
       - httpApi:
-          path: /payment
-          method: post
-      - httpApi:
-          path: /payment
-          method: put
-      - httpApi:
-          path: /payment
-          method: get
+          path: /user # Endpoint path
+          method: put # HTTP method
 
-# Define plugins used in the serverless configuration.
+  # GetProfile function configuration
+  get-profile:
+    handler: app/handler.GetProfile # Handler for GetProfile function
+    events:
+      - httpApi:
+          path: /user # Endpoint path
+          method: get # HTTP method
+
+  # Cart Section
+
+  # CreateCart function configuration
+  create-cart:
+    handler: app/handler.CreateCart # Handler for CreateCart function
+    timeout: 20 # Lambda function timeout
+    events:
+      - httpApi:
+          path: /cart # Endpoint path
+          method: post # HTTP method
+
+  # EditCart function configuration
+  edit-cart:
+    handler: app/handler.EditCart # Handler for EditCart function
+    timeout: 20 # Lambda function timeout
+    events:
+      - httpApi:
+          path: /cart/{id} # Endpoint path with parameter
+          method: put # HTTP method
+
+  # GetCart function configuration
+  get-cart:
+    handler: app/handler.GetCart # Handler for GetCart function
+    timeout: 20 # Lambda function timeout
+    events:
+      - httpApi:
+          path: /cart # Endpoint path
+          method: get # HTTP method
+
+  # DeleteCart function configuration
+  delete-cart:
+    handler: app/handler.DeleteCart # Handler for DeleteCart function
+    timeout: 20 # Lambda function timeout
+    events:
+      - httpApi:
+          path: /cart/{id} # Endpoint path with parameter
+          method: delete # HTTP method
+
+  # CollectPayment function configuration
+  collect-payment:
+    handler: app/handler.CollectPayment # Handler for CollectPayment function
+    timeout: 20 # Lambda function timeout
+    events:
+      - httpApi:
+          path: /collect-payment # Endpoint path
+          method: post # HTTP method
+
+  # CreateOrder function configuration
+  create-order:
+    handler: app/handler.CreateOrder # Handler for CreateOrder function
+    timeout: 20 # Lambda function timeout
+    events:
+      - httpApi:
+          path: /order # Endpoint path
+          method: post # HTTP method
+
 plugins:
+  - serverless-dotenv-plugin
   - serverless-offline
   - serverless-plugin-typescript
-  - serverless-dotenv-plugin
-  
-# Package configuration to deploy functions individually.
+  - serverless-plugin-optimize
+
 package:
   individually: true
+
+resources:
+  Resources:
+    # Define SNS topic resource
+    CustomerTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: "customer sns topic description" # Display name for SNS topic
+

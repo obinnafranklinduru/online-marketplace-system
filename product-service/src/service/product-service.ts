@@ -17,59 +17,92 @@ export class ProductService {
   }
 
   async createProduct(event: APIGatewayEvent) {
-    const input = plainToClass(ProductInput, event.body);
-    const error = await AppValidationError(input);
-    if (error) return ErrorResponse(404, error);
+    try {
+      const input = plainToClass(ProductInput, event.body);
+      const error = await AppValidationError(input);
+      if (error) return ErrorResponse(404, error);
 
-    const data = await this._repository.createProduct(input);
+      const data = await this._repository.createProduct(input);
 
-    await new CategoryRepository().addItem({
-      id: input.category_id,
-      products: [data._id],
-    });
+      await new CategoryRepository().addItem({
+        id: input.category_id,
+        products: [data._id],
+      });
 
-    return SuccessResponse(data);
+      return SuccessResponse(data);
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
   }
 
   async getProducts(event: APIGatewayEvent) {
-    const data = await this._repository.getAllProducts();
-    return SuccessResponse(data);
+    try {
+      const data = await this._repository.getAllProducts();
+      return SuccessResponse(data);
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
   }
 
   async getProduct(event: APIGatewayEvent) {
-    const productId = event.pathParameters?.id;
-    if (!productId) return ErrorResponse(403, "Please provide product Id");
+    try {
+      const productId = event.pathParameters?.id;
+      if (!productId) return ErrorResponse(403, "Please provide product Id");
 
-    const data = await this._repository.getProductById(productId);
-    return SuccessResponse(data);
+      const data = await this._repository.getProductById(productId);
+      return SuccessResponse(data);
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
   }
 
   async editProduct(event: APIGatewayEvent) {
-    const productId = event.pathParameters?.id;
-    if (!productId) return ErrorResponse(403, "Please provide product Id");
+    try {
+      const productId = event.pathParameters?.id;
+      if (!productId) return ErrorResponse(403, "Please provide product Id");
 
-    const input = plainToClass(ProductInput, event.body);
-    const error = await AppValidationError(input);
-    if (error) return ErrorResponse(404, error);
+      const input = plainToClass(ProductInput, event.body);
+      const error = await AppValidationError(input);
+      if (error) return ErrorResponse(404, error);
 
-    input.id = productId;
-    const data = await this._repository.updateProduct(input);
-    return SuccessResponse(data);
+      input.id = productId;
+      const data = await this._repository.updateProduct(input);
+      return SuccessResponse(data);
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
   }
 
   async deleteProduct(event: APIGatewayEvent) {
-    const productId = event.pathParameters?.id;
-    if (!productId) return ErrorResponse(403, "Please provide product Id");
+    try {
+      const productId = event.pathParameters?.id;
+      if (!productId) return ErrorResponse(403, "Please provide product Id");
 
-    const { category_id, deleteResult } = await this._repository.deleteProduct(
-      productId
-    );
+      const { category_id, deleteResult } =
+        await this._repository.deleteProduct(productId);
 
-    await new CategoryRepository().removeItem({
-      id: category_id,
-      products: [productId],
-    });
+      await new CategoryRepository().removeItem({
+        id: category_id,
+        products: [productId],
+      });
 
-    return SuccessResponse(deleteResult);
+      return SuccessResponse(deleteResult);
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
+  }
+
+  async handleQueueOperation(event: APIGatewayEvent) {
+    try {
+      return SuccessResponse({ name: "obinna" });
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
   }
 }

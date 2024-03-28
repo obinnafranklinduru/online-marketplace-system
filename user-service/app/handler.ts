@@ -1,3 +1,6 @@
 import "reflect-metadata";
+import dotenv from "dotenv";
+dotenv.config();
 
-export * from "./handler/userHandler";
+export * from "./handlers/userHandler";
+export * from "./handlers/cartHandler";
