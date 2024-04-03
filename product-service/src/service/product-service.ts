@@ -5,6 +5,7 @@ import { ProductInput } from "../dto/product-input";
 import { AppValidationError } from "../utils/errors";
 import { ErrorResponse, SuccessResponse } from "../utils/response";
 import { CategoryRepository } from "../repository/category-repository";
+import { ServiceInput } from "../dto/service-input";
 
 export class ProductService {
   _repository: ProductRepository;
@@ -20,7 +21,7 @@ export class ProductService {
     try {
       const input = plainToClass(ProductInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       const data = await this._repository.createProduct(input);
 
@@ -49,7 +50,7 @@ export class ProductService {
   async getProduct(event: APIGatewayEvent) {
     try {
       const productId = event.pathParameters?.id;
-      if (!productId) return ErrorResponse(403, "Please provide product Id");
+      if (!productId) return ErrorResponse(401, "Please provide product Id");
 
       const data = await this._repository.getProductById(productId);
       return SuccessResponse(data);
@@ -62,11 +63,11 @@ export class ProductService {
   async editProduct(event: APIGatewayEvent) {
     try {
       const productId = event.pathParameters?.id;
-      if (!productId) return ErrorResponse(403, "Please provide product Id");
+      if (!productId) return ErrorResponse(401, "Please provide product Id");
 
       const input = plainToClass(ProductInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       input.id = productId;
       const data = await this._repository.updateProduct(input);
@@ -80,7 +81,7 @@ export class ProductService {
   async deleteProduct(event: APIGatewayEvent) {
     try {
       const productId = event.pathParameters?.id;
-      if (!productId) return ErrorResponse(403, "Please provide product Id");
+      if (!productId) return ErrorResponse(401, "Please provide product Id");
 
       const { category_id, deleteResult } =
         await this._repository.deleteProduct(productId);
@@ -99,7 +100,19 @@ export class ProductService {
 
   async handleQueueOperation(event: APIGatewayEvent) {
     try {
-      return SuccessResponse({ name: "obinna" });
+      const input = plainToClass(ServiceInput, event.body);
+      const error = await AppValidationError(input);
+      if (error) return ErrorResponse(400, error);
+
+      const { _id, name, price, image_url } =
+        await this._repository.getProductById(input.productId);
+
+      return SuccessResponse({
+        product_id: _id,
+        name,
+        price,
+        image_url,
+      });
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);

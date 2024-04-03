@@ -18,7 +18,7 @@ export class CategoryService {
   async createCategory(event: APIGatewayEvent) {
     const input = plainToClass(CategoryInput, event.body);
     const error = await AppValidationError(input);
-    if (error) return ErrorResponse(404, error);
+    if (error) return ErrorResponse(400, error);
 
     const data = await this._repository.createCategory(input);
     return SuccessResponse(data);
@@ -37,7 +37,7 @@ export class CategoryService {
 
   async getCategory(event: APIGatewayEvent) {
     const categoryId = event.pathParameters?.id;
-    if (!categoryId) return ErrorResponse(403, "Please provide category id");
+    if (!categoryId) return ErrorResponse(400, "Please provide category id");
 
     const offset = Number(event.queryStringParameters?.offset);
     const pages = Number(event.queryStringParameters?.pages);
@@ -52,11 +52,11 @@ export class CategoryService {
 
   async editCategory(event: APIGatewayEvent) {
     const categoryId = event.pathParameters?.id;
-    if (!categoryId) return ErrorResponse(403, "Please provide category id");
+    if (!categoryId) return ErrorResponse(400, "Please provide category id");
 
     const input = plainToClass(CategoryInput, event.body);
     const error = await AppValidationError(input);
-    if (error) return ErrorResponse(404, error);
+    if (error) return ErrorResponse(400, error);
 
     input.id = categoryId;
     const data = await this._repository.updateCategory(input);
@@ -65,7 +65,7 @@ export class CategoryService {
 
   async deleteCategory(event: APIGatewayEvent) {
     const categoryId = event.pathParameters?.id;
-    if (!categoryId) return ErrorResponse(403, "Please provide category id");
+    if (!categoryId) return ErrorResponse(400, "Please provide category id");
 
     const data = await this._repository.deleteCategory(categoryId);
     return SuccessResponse(data);
