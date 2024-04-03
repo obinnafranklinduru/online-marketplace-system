@@ -39,7 +39,7 @@ export class UserService {
     try {
       const input = plainToClass(SignupInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       const salt = await GetSalt();
       const hashedPassword = await GetHashedPassword(input.password, salt);
@@ -62,7 +62,7 @@ export class UserService {
     try {
       const input = plainToClass(LoginInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       const data = await this.repository.findAccount(input.email);
 
@@ -72,7 +72,7 @@ export class UserService {
         data.salt
       );
 
-      if (!verified) throw new Error("Invalid Credential");
+      if (!verified) return ErrorResponse(404, "invalid credential!");
 
       const token = GetToken(data);
 
@@ -87,7 +87,7 @@ export class UserService {
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
       const { code, expiry } = GenerateAccessCode();
 
@@ -113,11 +113,11 @@ export class UserService {
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
       const input = plainToClass(VerificationInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       const { verification_code, expiry } = await this.repository.findAccount(
         payload.email
@@ -133,10 +133,9 @@ export class UserService {
           // update on DB
           await this.repository.updateVerifyUser(payload.user_id);
         } else {
-          return ErrorResponse(403, "verification code is expired");
+          return ErrorResponse(400, "verification code is expired");
         }
       }
-
       return SuccessResponse({ message: "user verified" });
     } catch (error) {
       console.log(error);
@@ -149,11 +148,11 @@ export class UserService {
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
       const input = plainToClass(ProfileInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       // DB Operation
       await this.repository.createProfile(payload.user_id, input);
@@ -168,7 +167,7 @@ export class UserService {
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
       const result = await this.repository.getUserProfile(payload.user_id);
       return SuccessResponse(result);
@@ -182,43 +181,15 @@ export class UserService {
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
       const input = plainToClass(ProfileInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
       // DB Operation
       await this.repository.editProfile(payload.user_id, input);
       return SuccessResponse({ message: "profile updated!" });
-    } catch (error) {
-      console.log(error);
-      return ErrorResponse(500, error);
-    }
-  }
-
-  // Cart Section
-  async CreateCart(event: APIGatewayProxyEventV2) {
-    try {
-      return SuccessResponse({ message: "Response from create cart" });
-    } catch (error) {
-      console.log(error);
-      return ErrorResponse(500, error);
-    }
-  }
-
-  async GetCart(event: APIGatewayProxyEventV2) {
-    try {
-      return SuccessResponse({ message: "Response from get cart" });
-    } catch (error) {
-      console.log(error);
-      return ErrorResponse(500, error);
-    }
-  }
-
-  async UpdateCart(event: APIGatewayProxyEventV2) {
-    try {
-      return SuccessResponse({ message: "Response from update cart" });
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);

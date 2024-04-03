@@ -2,7 +2,7 @@ import aws from "aws-sdk";
 import { APIGatewayProxyEventV2 } from "aws-lambda";
 import { autoInjectable } from "tsyringe";
 import { plainToClass } from "class-transformer";
-import { ErrorResponse, SuccessResponse } from "../utils/response";
+import { ErrorResponse, SuccessResponse } from "../utils/response"; //
 import { AppValidationError } from "../utils/errors";
 import { VerifyToken } from "../utils/password";
 import { CartRepository } from "../repository/cartRspository";
@@ -25,45 +25,49 @@ export class CartService {
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
       const input = plainToClass(CartInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
+      if (error) return ErrorResponse(400, error);
 
-      let currentCart = await this.repository.findShoppingCart(payload.user_id);
+      let currentCart = await this.repository.findShoppingCart(payload.user_id); // Finding existing shopping cart for user
       if (!currentCart)
+        // If shopping cart doesn't exist, create a new one
         currentCart = await this.repository.createShoppingCart(payload.user_id);
 
       let currentProduct = await this.repository.findCartItemByProductId(
         input.productId
-      );
+      ); // Finding cart item by product ID
       if (currentProduct) {
+        // If product already exists in cart, update its quantity
         await this.repository.updateCartItemByProductId(
           input.productId,
           (currentProduct.item_qty += input.qty)
         );
       } else {
+        // If product doesn't exist in cart, add it
         const { data, status } = await PullData({
           action: "PULL_PRODUCT_DATA",
           productId: input.productId,
-        });
-        console.log("Getting Product", data);
+        }); // Pulling product data from message queue
+        console.log("Getting Product", data); // Logging retrieved product data
         if (status !== 200) {
+          // If product data retrieval fails, return internal server error
           return ErrorResponse(500, "failed to get product data!");
         }
 
-        let cartItem = data.data as CartItemModel;
-        cartItem.cart_id = currentCart.cart_id;
-        cartItem.item_qty = input.qty;
+        let cartItem = data.data as CartItemModel; // Casting retrieved data to CartItemModel
+        cartItem.cart_id = currentCart.cart_id; // Assigning cart ID to cart item
+        cartItem.item_qty = input.qty; // Setting item quantity
         // Finally create cart item
-        await this.repository.createCartItem(cartItem);
+        await this.repository.createCartItem(cartItem); // Creating new cart item in database
       }
       const cartItems = await this.repository.findCartItemsByCartId(
         currentCart.cart_id
-      );
+      ); // Finding all cart items for current cart
 
-      return SuccessResponse(cartItems);
+      return SuccessResponse(cartItems); // Returning success response with cart items
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);
@@ -71,12 +75,14 @@ export class CartService {
   }
 
   async GetCart(event: APIGatewayProxyEventV2) {
+    // Method to get user's shopping cart
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
-      const result = await this.repository.findCartItems(payload.user_id);
-      return SuccessResponse(result);
+      if (!payload) return ErrorResponse(401, "authorization failed!");
+
+      const result = await this.repository.findCartItems(payload.user_id); // Finding all cart items for user
+      return SuccessResponse(result); // Returning success response with cart items
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);
@@ -84,24 +90,24 @@ export class CartService {
   }
 
   async UpdateCart(event: APIGatewayProxyEventV2) {
+    // Method to update cart item quantity
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      const cartItemId = Number(event.pathParameters.id);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
+
+      const cartItemId = Number(event.pathParameters.id); // Extracting cart item ID from request path parameters
 
       const input = plainToClass(UpdateCartInput, event.body);
       const error = await AppValidationError(input);
-      if (error) return ErrorResponse(404, error);
-
+      if (error) return ErrorResponse(400, error);
       const cartItem = await this.repository.updateCartItemById(
         cartItemId,
         input.qty
-      );
-      if (cartItem) {
-        return SuccessResponse(cartItem);
-      }
-      return ErrorResponse(404, "item does not exist");
+      ); // Updating cart item quantity in database
+      if (!cartItem) return ErrorResponse(404, "item does not exist"); // Returning not found error if cart item doesn't exist
+
+      return SuccessResponse(cartItem); // Returning success response with updated cart item
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);
@@ -109,14 +115,16 @@ export class CartService {
   }
 
   async DeleteCart(event: APIGatewayProxyEventV2) {
+    // Method to delete cart item
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
-      const cartItemId = Number(event.pathParameters.id);
-      if (!payload) return ErrorResponse(403, "authorization failed!");
+      if (!payload) return ErrorResponse(401, "authorization failed!");
 
-      const deletedItem = await this.repository.deleteCartItem(cartItemId);
-      return SuccessResponse(deletedItem);
+      const cartItemId = Number(event.pathParameters.id); // Extracting cart item ID from request path parameters
+
+      const deletedItem = await this.repository.deleteCartItem(cartItemId); // Deleting cart item from database
+      return SuccessResponse(deletedItem); // Returning success response with deleted cart item
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);
@@ -124,38 +132,60 @@ export class CartService {
   }
 
   async CollectPayment(event: APIGatewayProxyEventV2) {
+    // Method to collect payment and place order
     try {
       const token = event.headers.authorization;
       const payload = await VerifyToken(token);
+      if (!payload) return ErrorResponse(401, "authorization failed!");
+
       // initilize Payment gateway
 
       // authenticate payment confirmation
 
       // get cart items
 
-      if (!payload) return ErrorResponse(403, "authorization failed!");
-      const cartItems = await this.repository.findCartItems(payload.user_id);
+      const cartItems = await this.repository.findCartItems(payload.user_id); // Finding all cart items for user
 
       // Send SNS topic to create Order [Transaction MS] => email to user
       const params = {
-        Message: JSON.stringify(cartItems),
-        TopicArn: process.env.SNS_TOPIC,
+        // Creating SNS publish parameters
+        Message: JSON.stringify(cartItems), // Converting cart items to JSON string
+        TopicArn: process.env.SNS_TOPIC, // Setting SNS topic ARN from environment variables
         MessageAttributes: {
+          // Defining message attributes
           actionType: {
             DataType: "String",
             StringValue: "place_order",
           },
         },
       };
-      const sns = new aws.SNS();
-      const response = await sns.publish(params).promise();
+      const sns = new aws.SNS(); // Creating SNS instance
+      const response = await sns.publish(params).promise(); // Publishing message to SNS topic
 
       // Send tentative message to user
 
-      return SuccessResponse({ msg: "Payment Processing...", response });
+      return SuccessResponse({ msg: "Payment Processing...", response }); // Returning success response with processing message and SNS response
     } catch (error) {
       console.log(error);
       return ErrorResponse(500, error);
     }
   }
+
+  // async GetOrders(event: APIGatewayProxyEventV2) {
+  //   try {
+  //     return SuccessResponse({ msg: "get orders..." });
+  //   } catch (error) {
+  //     console.log(error);
+  //     return ErrorResponse(500, error);
+  //   }
+  // }
+
+  // async GetOrder(event: APIGatewayProxyEventV2) {
+  //   try {
+  //     return SuccessResponse({ msg: "get order by id..." });
+  //   } catch (error) {
+  //     console.log(error);
+  //     return ErrorResponse(500, error);
+  //   }
+  // }
 }

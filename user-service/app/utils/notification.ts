@@ -26,7 +26,7 @@ const MailGenerator = new Mailgen({
   theme: "default",
   product: {
     name: "User Service",
-    link: "http://localhost:3000",
+    link: process.env.BASE_URL! || "http://localhost:3000",
   },
 });
 

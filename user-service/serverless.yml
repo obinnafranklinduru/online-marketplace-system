@@ -4,6 +4,7 @@ service: user-service
 # Specify the framework version used for deployment.
 frameworkVersion: "3"
 
+# Allow environment variables
 useDotenv: true
 
 # Define the provider configuration for AWS.
@@ -162,3 +163,10 @@ resources:
       Properties:
         DisplayName: "customer sns topic description" # Display name for SNS topic
 
+#output for later usages
+Outputs:
+  CustomerTopicInfo:
+    Description: customer-topic
+    Value: !Ref CustomerTopic
+    Export:
+      Name: customer-topic
