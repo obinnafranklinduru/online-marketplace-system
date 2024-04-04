@@ -41,4 +41,4 @@ The API handles errors by returning appropriate HTTP status codes and error mess
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/obinnafranklinduru/online-marketplace-system/blob/master/LICENSE).
+This project is licensed under the [MIT License](https://github.com/obinnafranklinduru/online-marketplace-system/blob/main/LICENSE).
